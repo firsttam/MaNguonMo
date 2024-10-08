@@ -31,8 +31,8 @@ if df.shape[1] < 6:
 # Column 4: Sample Question Papers Practiced
 # Column 5: Performance Index (Target)
 
-X = df.iloc[:200, 0:5].values.astype(np.float64)  # Features
-y = df.iloc[:200, 5].values.astype(np.float64)    # Target
+X = df.iloc[0:, 0:5].values.astype(np.float64)  # Features
+y = df.iloc[0:, 5].values.astype(np.float64)    # Target
 
 # ====== 2. Data Scaling ======
 
@@ -47,34 +47,24 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # ====== 4. Model Training ======
 
-# 4.1 KNN Regressor
+# Initialize and train models
 knn = neighbors.KNeighborsRegressor(n_neighbors=3, p=2)
 knn.fit(X_train, y_train)
 
-# 4.2 Linear Regression
 lin_reg = LinearRegression()
 lin_reg.fit(X_train, y_train)
 
-# 4.3 Decision Tree Regressor
 dt_reg = DecisionTreeRegressor(random_state=1)
 dt_reg.fit(X_train, y_train)
 
-# 4.4 Support Vector Regressor (SVR)
 svr = SVR(kernel='rbf')
 svr.fit(X_train, y_train)
 
 # ====== 5. Model Prediction ======
 
-# 5.1 KNN Predictions
 y_predict_knn = knn.predict(X_test)
-
-# 5.2 Linear Regression Predictions
 y_predict_lr = lin_reg.predict(X_test)
-
-# 5.3 Decision Tree Predictions
 y_predict_dt = dt_reg.predict(X_test)
-
-# 5.4 SVR Predictions
 y_predict_svr = svr.predict(X_test)
 
 # ====== 6. Model Evaluation ======
@@ -87,25 +77,11 @@ evaluation_metrics = {
     'SVR': {}
 }
 
-# 6.1 KNN Evaluation
-evaluation_metrics['KNN']['MSE'] = mean_squared_error(y_test, y_predict_knn)
-evaluation_metrics['KNN']['MAE'] = mean_absolute_error(y_test, y_predict_knn)
-evaluation_metrics['KNN']['RMSE'] = np.sqrt(evaluation_metrics['KNN']['MSE'])
-
-# 6.2 Linear Regression Evaluation
-evaluation_metrics['Linear Regression']['MSE'] = mean_squared_error(y_test, y_predict_lr)
-evaluation_metrics['Linear Regression']['MAE'] = mean_absolute_error(y_test, y_predict_lr)
-evaluation_metrics['Linear Regression']['RMSE'] = np.sqrt(evaluation_metrics['Linear Regression']['MSE'])
-
-# 6.3 Decision Tree Evaluation
-evaluation_metrics['Decision Tree']['MSE'] = mean_squared_error(y_test, y_predict_dt)
-evaluation_metrics['Decision Tree']['MAE'] = mean_absolute_error(y_test, y_predict_dt)
-evaluation_metrics['Decision Tree']['RMSE'] = np.sqrt(evaluation_metrics['Decision Tree']['MSE'])
-
-# 6.4 SVR Evaluation
-evaluation_metrics['SVR']['MSE'] = mean_squared_error(y_test, y_predict_svr)
-evaluation_metrics['SVR']['MAE'] = mean_absolute_error(y_test, y_predict_svr)
-evaluation_metrics['SVR']['RMSE'] = np.sqrt(evaluation_metrics['SVR']['MSE'])
+# Calculate evaluation metrics for each model
+for model_name, y_pred in zip(evaluation_metrics.keys(), [y_predict_knn, y_predict_lr, y_predict_dt, y_predict_svr]):
+    evaluation_metrics[model_name]['MSE'] = mean_squared_error(y_test, y_pred)
+    evaluation_metrics[model_name]['MAE'] = mean_absolute_error(y_test, y_pred)
+    evaluation_metrics[model_name]['RMSE'] = np.sqrt(evaluation_metrics[model_name]['MSE'])
 
 # Print Evaluation Metrics
 for model in evaluation_metrics:
@@ -127,14 +103,10 @@ plt.plot(range(len(y_predict_svr)), y_predict_svr, 'cD', label='SVR Predicted') 
 
 # Plot lines connecting actual and predicted data points for each model
 for i in range(len(y_test)):
-    # KNN
-    plt.plot([i, i], [y_test[i], y_predict_knn[i]], 'b-', linewidth=0.5)
-    # Linear Regression
-    plt.plot([i, i], [y_test[i], y_predict_lr[i]], 'g--', linewidth=0.5)
-    # Decision Tree
-    plt.plot([i, i], [y_test[i], y_predict_dt[i]], 'm-.', linewidth=0.5)
-    # SVR
-    plt.plot([i, i], [y_test[i], y_predict_svr[i]], 'c:', linewidth=0.5)
+    plt.plot([i, i], [y_test[i], y_predict_knn[i]], 'b-', linewidth=0.5)  # KNN
+    plt.plot([i, i], [y_test[i], y_predict_lr[i]], 'g--', linewidth=0.5)  # Linear Regression
+    plt.plot([i, i], [y_test[i], y_predict_dt[i]], 'm-.', linewidth=0.5)  # Decision Tree
+    plt.plot([i, i], [y_test[i], y_predict_svr[i]], 'c:', linewidth=0.5)   # SVR
 
 plt.title('Actual vs Predicted Performance Index by Different Models')
 plt.xlabel('Sample Index')
@@ -146,29 +118,23 @@ plt.show()
 
 # ====== 8. Performance Comparison Bar Chart ======
 
-# Define metrics
 metrics = ['MSE', 'MAE', 'RMSE']
 models = ['KNN', 'Linear Regression', 'Decision Tree', 'SVR']
 colors = ['skyblue', 'lightgreen', 'salmon', 'plum']
 
 # Prepare data for plotting
-knn_scores = [evaluation_metrics['KNN'][metric] for metric in metrics]
-lr_scores = [evaluation_metrics['Linear Regression'][metric] for metric in metrics]
-dt_scores = [evaluation_metrics['Decision Tree'][metric] for metric in metrics]
-svr_scores = [evaluation_metrics['SVR'][metric] for metric in metrics]
+scores = {model: [evaluation_metrics[model][metric] for metric in metrics] for model in models}
 
 x = np.arange(len(metrics))  # label locations
 width = 0.2  # width of the bars
 
-fig, ax = plt.subplots(figsize=(10,7))
+fig, ax = plt.subplots(figsize=(10, 7))
 
 # Plot bars for each model
-rects1 = ax.bar(x - 1.5*width, knn_scores, width, label='KNN', color=colors[0])
-rects2 = ax.bar(x - 0.5*width, lr_scores, width, label='Linear Regression', color=colors[1])
-rects3 = ax.bar(x + 0.5*width, dt_scores, width, label='Decision Tree', color=colors[2])
-rects4 = ax.bar(x + 1.5*width, svr_scores, width, label='SVR', color=colors[3])
+for i, model in enumerate(models):
+    ax.bar(x + (i - 1.5) * width, scores[model], width, label=model, color=colors[i])
 
-# Add some text for labels, title and custom x-axis tick labels
+# Add labels, title, and custom x-axis tick labels
 ax.set_ylabel('Scores')
 ax.set_title('Model Performance Comparison')
 ax.set_xticks(x)
@@ -187,10 +153,8 @@ def autolabel(rects):
                     ha='center', va='bottom')
 
 # Apply autolabel to each set of bars
-autolabel(rects1)
-autolabel(rects2)
-autolabel(rects3)
-autolabel(rects4)
+for i in range(len(models)):
+    autolabel(ax.patches[i * len(metrics):(i + 1) * len(metrics)])
 
 fig.tight_layout()
 plt.show()
@@ -228,135 +192,35 @@ def categorize_errors(y_true, y_pred):
         '15+': 0
     }
     for error in errors:
-        if error <=5:
-            categories['0-5'] +=1
-        elif error <=10:
-            categories['5-10'] +=1
-        elif error <=15:
-            categories['10-15'] +=1
+        if error <= 5:
+            categories['0-5'] += 1
+        elif error <= 10:
+            categories['5-10'] += 1
+        elif error <= 15:
+            categories['10-15'] += 1
         else:
-            categories['15+'] +=1
+            categories['15+'] += 1
     return categories
 
-# KNN Error Categories
-categories_knn = categorize_errors(y_test, y_predict_knn)
-labels_knn = list(categories_knn.keys())
-sizes_knn = list(categories_knn.values())
-
-# Linear Regression Error Categories
-categories_lr = categorize_errors(y_test, y_predict_lr)
-labels_lr = list(categories_lr.keys())
-sizes_lr = list(categories_lr.values())
-
-# Decision Tree Error Categories
-categories_dt = categorize_errors(y_test, y_predict_dt)
-labels_dt = list(categories_dt.keys())
-sizes_dt = list(categories_dt.values())
-
-# SVR Error Categories
-categories_svr = categorize_errors(y_test, y_predict_svr)
-labels_svr = list(categories_svr.keys())
-sizes_svr = list(categories_svr.values())
+# Generate error categories for each model
+categories = {}
+for model_name, y_pred in zip(['KNN', 'Linear Regression', 'Decision Tree', 'SVR'], 
+                               [y_predict_knn, y_predict_lr, y_predict_dt, y_predict_svr]):
+    categories[model_name] = categorize_errors(y_test, y_pred)
 
 # Plot Pie Charts Side by Side
-fig, axs = plt.subplots(2, 2, figsize=(16,12))
+fig, axs = plt.subplots(2, 2, figsize=(16, 12))
 
-# KNN Pie Chart
-axs[0,0].pie(sizes_knn, labels=labels_knn, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
-axs[0,0].axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-axs[0,0].set_title('KNN Prediction Error Distribution')
-
-# Linear Regression Pie Chart
-axs[0,1].pie(sizes_lr, labels=labels_lr, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
-axs[0,1].axis('equal')
-axs[0,1].set_title('Linear Regression Prediction Error Distribution')
-
-# Decision Tree Pie Chart
-axs[1,0].pie(sizes_dt, labels=labels_dt, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
-axs[1,0].axis('equal')
-axs[1,0].set_title('Decision Tree Prediction Error Distribution')
-
-# SVR Pie Chart
-axs[1,1].pie(sizes_svr, labels=labels_svr, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
-axs[1,1].axis('equal')
-axs[1,1].set_title('SVR Prediction Error Distribution')
-
-plt.tight_layout()
-plt.show()
-
-# ====== 11. User Input and Prediction ======
-
-def predict_student_performance(model, scaler, model_name='Model'):
-    print(f"\nEnter the following details to predict the student's Performance Index using {model_name}:")
-    try:
-        hours_studied = float(input("Hours Studied: "))
-        previous_scores = float(input("Previous Scores: "))
-        extracurricular_activities = float(input("Extracurricular Activities (e.g., number of activities): "))
-        sleep_hours = float(input("Sleep Hours: "))
-        sample_question_papers_practiced = float(input("Sample Question Papers Practiced: "))
-    except ValueError:
-        print("Invalid input. Please enter numerical values.")
-        return None, None
-
-    # Create a numpy array with the input features
-    input_features = np.array([[hours_studied,
-                                previous_scores,
-                                extracurricular_activities,
-                                sleep_hours,
-                                sample_question_papers_practiced]])
-
-    # Scale the input features using the same scaler as training data
-    input_features_scaled = scaler.transform(input_features)
-
-    # Predict the Performance Index
-    predicted_performance = model.predict(input_features_scaled)
-
-    print(f"\nPredicted Performance Index using {model_name}: {predicted_performance[0]:.2f}")
-
-    return predicted_performance[0], input_features_scaled
-
-# ====== 12. User Predictions for All Models ======
-
-# Predict using KNN
-user_prediction_knn, user_input_scaled_knn = predict_student_performance(knn, scaler, model_name='KNN')
-
-# Predict using Linear Regression
-user_prediction_lr, user_input_scaled_lr = predict_student_performance(lin_reg, scaler, model_name='Linear Regression')
-
-# Predict using Decision Tree
-user_prediction_dt, user_input_scaled_dt = predict_student_performance(dt_reg, scaler, model_name='Decision Tree')
+# Pie chart for each model
+for ax, (model_name, category) in zip(axs.flatten(), categories.items()):
+    labels = list(category.keys())
+    sizes = list(category.values())
     
-# Predict using SVR
-user_prediction_svr, user_input_scaled_svr = predict_student_performance(svr, scaler, model_name='SVR')
+    ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors_box)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    ax.set_title(f'Error Distribution for {model_name}')
 
-# ====== 13. Visualization of User
-plt.figure(figsize=(14, 8))
-plt.plot(range(len(y_test)), y_test, 'ro', label='Actual Data')
-
-# Plot Predictions from All Models
-plt.plot(range(len(y_predict_knn)), y_predict_knn, 'bo', label='KNN Predicted')
-plt.plot(range(len(y_predict_lr)), y_predict_lr, 'gs', label='Linear Regression Predicted')
-plt.plot(range(len(y_predict_dt)), y_predict_dt, 'm^', label='Decision Tree Predicted')  # 'm^' = magenta triangles
-plt.plot(range(len(y_predict_svr)), y_predict_svr, 'cD', label='SVR Predicted')        # 'cD' = cyan diamonds
-
-# Plot lines connecting actual and predicted data points for each model
-for i in range(len(y_test)):
-    # KNN
-    plt.plot([i, i], [y_test[i], y_predict_knn[i]], 'b-', linewidth=0.5)
-    # Linear Regression
-    plt.plot([i, i], [y_test[i], y_predict_lr[i]], 'g--', linewidth=0.5)
-    # Decision Tree
-    plt.plot([i, i], [y_test[i], y_predict_dt[i]], 'm-.', linewidth=0.5)
-    # SVR
-    plt.plot([i, i], [y_test[i], y_predict_svr[i]], 'c:', linewidth=0.5)
-
-# Plot the user predictions
-    if (user_prediction_knn is not None and 
-        user_prediction_lr is not None and 
-        user_prediction_dt is not None and 
-        user_prediction_svr is not None):
-        user_index = len(y_test) + 1
-        plt.plot(user_index, user_prediction_knn, 'ms', label='User Prediction KNN', markersize=8)  # 'ms' = magenta square
-        plt.plot(user_index, user_prediction_lr, 'md', label='User Prediction LR', markersize=8)     # 'md' = magenta diamond
-        plt.plot(user_index, user_prediction_dt, 'mp', label='User Prediction DT', markersize=8)     # 'mp' = magenta pentagon
-        plt.plot(user_index, user_prediction_svr, 'mh', label='User Prediction SVR', markersize=8)    # 'mh' = magenta hexagon
+plt.suptitle('Error Distribution of Different Models', fontsize=16)
+plt.tight_layout()
+plt.subplots_adjust(top=0.9)  # Adjust the title to not overlap with the pie charts
+plt.show()
