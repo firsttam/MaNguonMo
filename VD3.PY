@@ -1,99 +1,160 @@
-import tkinter as tk
 import numpy as np
+import tkinter as tk
+from tkinter import messagebox
 
-def calculate():
-    try:
-        a = np.array(eval(entry_a.get()))
-        b = np.array(eval(entry_b.get()))
+class MatrixOperationsApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Phép toán ma trận (n x n)")
 
-        # Cộng
-        result_add.set(str(a + b))
+        # Nhãn hướng dẫn nhập kích thước ma trận
+        self.instructions_label = tk.Label(root, text="Nhập kích thước ma trận (n):")
+        self.instructions_label.grid(row=0, column=0, columnspan=2)
 
-        # Trừ
-        result_sub.set(str(a - b))
+        # Ô nhập cho n (kích thước ma trận)
+        self.n_entry = tk.Entry(root)
+        self.n_entry.grid(row=0, column=2)
 
-        # Nhân
-        result_mul.set(str(np.dot(a, b)))
+        # Nút tạo các ô nhập liệu cho ma trận
+        self.generate_button = tk.Button(root, text="Tạo ma trận", command=self.generate_matrix_fields)
+        self.generate_button.grid(row=0, column=3)
 
-        # Chia (Nhân với nghịch đảo)
-        if np.linalg.det(b) != 0:  # Kiểm tra xem ma trận b có nghịch đảo không
-            result_div.set(str(np.dot(a, np.linalg.inv(b))))
-        else:
-            result_div.set("Ma trận B không có nghịch đảo")
+        # Nút "Reset"
+        self.reset_button = tk.Button(root, text="Reset", command=self.reset_fields)
+        self.reset_button.grid(row=0, column=4)
 
-        # Nghịch đảo
-        if np.linalg.det(a) != 0:  # Kiểm tra xem ma trận a có nghịch đảo không
-            result_inv.set(str(np.linalg.inv(a)))
-        else:
-            result_inv.set("Ma trận A không có nghịch đảo")
+        # Nơi lưu các ô nhập liệu cho ma trận
+        self.matrix1_entries = []
+        self.matrix2_entries = []
+        self.result_label = None
+        self.label_operations = None
+        self.n = 0
 
-        # Hạng
-        rank.set(str(np.linalg.matrix_rank(a)))
+    def generate_matrix_fields(self):
+        self.reset_fields(clear_n_entry=False)
 
-    except Exception as e:
-        result_add.set(str(e))
-        result_sub.set(str(e))
-        result_mul.set(str(e))
-        result_div.set(str(e))
-        result_inv.set(str(e))
-        rank.set(str(e))
+        try:
+            # Lấy kích thước ma trận n
+            self.n = int(self.n_entry.get())
+            if self.n <= 0:
+                raise ValueError("Kích thước ma trận phải là một số nguyên dương.")
 
-def reset():
-    entry_a.delete(0, tk.END)
-    entry_b.delete(0, tk.END)
-    result_add.set("")
-    result_sub.set("")
-    result_mul.set("")
-    result_div.set("")
-    result_inv.set("")
-    rank.set("")
+            # Tạo các ô nhập liệu cho ma trận A
+            tk.Label(self.root, text="Ma trận A:").grid(row=2, column=0, columnspan=self.n)
+            for i in range(self.n):
+                row_entries = []
+                for j in range(self.n):
+                    entry = tk.Entry(self.root, width=5)
+                    entry.grid(row=i + 3, column=j)
+                    row_entries.append(entry)
+                self.matrix1_entries.append(row_entries)
 
-# Tạo cửa sổ GUI
-root = tk.Tk()
-root.title("Ma trận và Phép toán")
+            # Tạo các ô nhập liệu cho ma trận B
+            tk.Label(self.root, text="Ma trận B:").grid(row=self.n + 3, column=0, columnspan=self.n)
+            for i in range(self.n):
+                row_entries = []
+                for j in range(self.n):
+                    entry = tk.Entry(self.root, width=5)
+                    entry.grid(row=i + self.n + 4, column=j)
+                    row_entries.append(entry)
+                self.matrix2_entries.append(row_entries)
 
-# Nhập ma trận A
-tk.Label(root, text="Nhập ma trận A (vd: [[1, 2], [3, 4]]):").pack()
-entry_a = tk.Entry(root, width=50)
-entry_a.pack()
+            # Nút thực hiện các phép toán ma trận
+            self.calculate_button = tk.Button(root, text="Tính toán", command=self.perform_operations)
+            self.calculate_button.grid(row=self.n * 2 + 5, column=0, columnspan=6)
 
-# Nhập ma trận B
-tk.Label(root, text="Nhập ma trận B (vd: [[5, 6], [7, 8]]):").pack()
-entry_b = tk.Entry(root, width=50)
-entry_b.pack()
+        except ValueError:
+            messagebox.showerror("Lỗi nhập liệu", "Hãy nhập một số nguyên dương cho kích thước ma trận.")
 
-# Các biến để hiển thị kết quả
-result_add = tk.StringVar()
-result_sub = tk.StringVar()
-result_mul = tk.StringVar()
-result_div = tk.StringVar()
-result_inv = tk.StringVar()
-rank = tk.StringVar()
+    def perform_operations(self):
+        try:
+            # Lấy dữ liệu từ các ô nhập liệu và tạo ma trận A và B
+            A = np.array([[float(self.matrix1_entries[i][j].get()) for j in range(self.n)] for i in range(self.n)])
+            B = np.array([[float(self.matrix2_entries[i][j].get()) for j in range(self.n)] for i in range(self.n)])
 
-# Nút tính toán
-tk.Button(root, text="Tính toán", command=calculate).pack()
+            # Thực hiện các phép toán ma trận
+            addition_result = A + B
+            subtraction_result = A - B
+            multiplication_result = np.dot(A, B)
 
-# Nút reset
-tk.Button(root, text="Reset", command=reset).pack()
+            # Thực hiện phép chia A / B = A * B^-1 (nếu B khả nghịch)
+            if np.linalg.det(B) != 0:
+                division_result = np.dot(A, np.linalg.inv(B))
+            else:
+                division_result = None
 
-# Hiển thị kết quả
-tk.Label(root, text="Kết quả A + B:").pack()
-tk.Label(root, textvariable=result_add).pack()
+            # Tính hạng của ma trận kết quả
+            rank_A = np.linalg.matrix_rank(A)
+            rank_B = np.linalg.matrix_rank(B)
 
-tk.Label(root, text="Kết quả A - B:").pack()
-tk.Label(root, textvariable=result_sub).pack()
+            # Tính ma trận nghịch đảo nếu có
+            if np.linalg.det(A) != 0:
+                inverse_A = np.linalg.inv(A)
+            else:
+                inverse_A = None
 
-tk.Label(root, text="Kết quả A * B:").pack()
-tk.Label(root, textvariable=result_mul).pack()
+            if np.linalg.det(B) != 0:
+                inverse_B = np.linalg.inv(B)
+            else:
+                inverse_B = None
 
-tk.Label(root, text="Kết quả A / B (A * B⁻¹):").pack()
-tk.Label(root, textvariable=result_div).pack()
+            # Chuẩn bị kết quả hiển thị
+            result_text = f"Phép cộng (A + B):\n{addition_result}\n\n" \
+                          f"Phép trừ (A - B):\n{subtraction_result}\n\n" \
+                          f"Phép nhân (A * B):\n{multiplication_result}\n\n"
 
-tk.Label(root, text="Nghịch đảo của A:").pack()
-tk.Label(root, textvariable=result_inv).pack()
+            if division_result is not None:
+                result_text += f"Phép chia (A / B):\n{division_result}\n\n"
+            else:
+                result_text += "Phép chia (A / B): Không khả thi (B không khả nghịch)\n\n"
 
-tk.Label(root, text="Hạng của A:").pack()
-tk.Label(root, textvariable=rank).pack()
+            result_text += f"Hạng của ma trận A: {rank_A}\n"
+            result_text += f"Hạng của ma trận B: {rank_B}\n\n"
 
-# Bắt đầu vòng lặp chính của GUI
-root.mainloop()
+            if inverse_A is not None:
+                result_text += f"Ma trận nghịch đảo của A:\n{inverse_A}\n\n"
+            else:
+                result_text += "Ma trận A không có nghịch đảo.\n\n"
+
+            if inverse_B is not None:
+                result_text += f"Ma trận nghịch đảo của B:\n{inverse_B}\n\n"
+            else:
+                result_text += "Ma trận B không có nghịch đảo.\n\n"
+
+            # Hiển thị kết quả
+            if self.result_label:
+                self.result_label.destroy()
+            self.result_label = tk.Label(self.root, text=result_text)
+            self.result_label.grid(row=self.n * 2 + 6, column=0, columnspan=6)
+
+        except ValueError:
+            messagebox.showerror("Lỗi nhập liệu", "Vui lòng nhập các giá trị hợp lệ cho ma trận.")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Đã xảy ra lỗi không mong muốn: {str(e)}")
+
+    def reset_fields(self, clear_n_entry=True):
+        # Xóa các ô nhập liệu và đặt lại giao diện
+        for row in self.matrix1_entries:
+            for entry in row:
+                entry.destroy()
+        self.matrix1_entries.clear()
+
+        for row in self.matrix2_entries:
+            for entry in row:
+                entry.destroy()
+        self.matrix2_entries.clear()
+
+        # Xóa kết quả nếu có
+        if self.result_label:
+            self.result_label.destroy()
+            self.result_label = None
+
+        # Xóa ô nhập n nếu được chỉ định
+        if clear_n_entry:
+            self.n_entry.delete(0, tk.END)
+
+# Khởi tạo giao diện
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MatrixOperationsApp(root)
+    root.mainloop()
